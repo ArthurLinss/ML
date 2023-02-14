@@ -1,6 +1,6 @@
-# About this Repository
+# ML
 
-Collection of scripts from work and tutorials related to machine learning.
+This is a collection of scripts from work and tutorials related to machine learning.
 
 ## KMeans
 Unsupervised ML clustering algorithm. Uses iteratively a distance measure to detect similarities within an unlabelled dataset.
