@@ -1,8 +1,11 @@
-# ML
+# About this Repository
 
-# kmeans
+Collection of scripts from work and tutorials related to machine learning.
+
+## KMeans
 Unsupervised ML clustering algorithm. Uses iteratively a distance measure to detect similarities within an unlabelled dataset.
 
 
-# kNN
+## KNN
 Supervised ML algorithm used for both regression and classification based on a labelled dataset.
+
