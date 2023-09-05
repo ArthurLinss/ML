@@ -7,9 +7,12 @@ from dataOrganizer import (
     splitTrainTestByID,
     coloumnToCategory,
     stratSplit,
+    testTrainSplit,
+    visuals,
 )
 
 import pandas as pd
+
 
 def readingData(verbose=True, plotting=True):
     # define path for download
@@ -36,47 +39,35 @@ def readingData(verbose=True, plotting=True):
     return df
 
 
-def testTrainSplit(df: pd.DataFrame=None, method: str=""):
-    """
-    wrapper to get test and train datasets from dataframe with various methods
-    """
+def readingDataFromSciKit():
+    from sklearn.datasets import fetch_california_housing
 
-    if method == "method1":
-        df_train, df_test = splitTrainTest(df, 0.2)
-
-    elif method == "method2":
-
-        df_train, df_test = splitTrainTestByID(df, ratio=0.2, id_col="index")
-
-        # testing the train test split
-        print("train set: ", len(df_train))
-        print("test set: ", len(df_test))
-        print("ratio test/train: %.2f " % float(len(df_test) / len(df_train)))
-
-    elif method == "method3":
-
-        df = coloumnToCategory(
-            df, cat="income_cat", col="median_income", divider=1.5, merge_val=5.0, replace_val=5.0
-        )
-        df_train, df_test = stratSplit(df=df, ratio=0.2, cat="income_cat")
-
-        print("total set: ", df["income_cat"].value_counts() / len(df))
-        print("train set: ", df_train["income_cat"].value_counts() / len(df_train))
-        print("test set: ", df_test["income_cat"].value_counts() / len(df_test))
-
-        # agian remove the new category used for splitting 
-        for set in (df_train, df_test):
-            set.drop(["income_cat"], axis=1, inplace=True)
-
-    return df_train, df_test
+    df = fetch_california_housing(as_frame=True)
+    df = df.frame
+    d = {
+        "MedInc": "median_income",
+        "HouseAge": "housing_median_age",
+        "AveRooms": "total_rooms",
+        "AveBedrms": "total_bedrooms",
+        "Population": "population",
+        "AveOccup": "households",
+        "Latitude": "latitude",
+        "Longitude": "longitude",
+        "MedHouseVal": "median_house_value",
+    }
+    df.rename(columns=d, inplace=True)
+    return df
 
 
 def main():
-    df = readingData(verbose=False, plotting=False)
+    # df = readingData(verbose=False, plotting=False)
+    df = readingDataFromSciKit()
+    print(df.columns)
     print(df.head())
-    df_test, df_train = testTrainSplit(df, method="method3")
+    df_train, df_test = testTrainSplit(df, method="method3")
 
-
+    # do not touch test set
+    visuals(df_train)
 
 
 if __name__ == "__main__":
