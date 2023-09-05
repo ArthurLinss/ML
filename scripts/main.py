@@ -4,11 +4,12 @@ from dataOrganizer import (
     inspectDFCol,
     testTrainSplit,
     visuals,
-    correlationMatrix,
-    scatterMatrix,
+    correlations,
     addingFeatures,
-    splitLabelPredictor,
+    labelPredictorSplit,
+    cleanNans,
 )
+
 
 def readingDataFromWeb(verbose=True, plotting=True):
     # define path for download
@@ -27,7 +28,6 @@ def readingDataFromWeb(verbose=True, plotting=True):
 
         print(df.describe())
 
-
     # add index
     df = df.reset_index()
     return df
@@ -35,6 +35,7 @@ def readingDataFromWeb(verbose=True, plotting=True):
 
 def readingDataFromSciKit():
     from sklearn.datasets import fetch_california_housing
+
     # https://inria.github.io/scikit-learn-mooc/python_scripts/datasets_california_housing.html
 
     df = fetch_california_housing(as_frame=True)
@@ -54,6 +55,9 @@ def readingDataFromSciKit():
     return df
 
 
+import pandas as pd
+
+
 def main():
     # df = readingDataFromWeb(verbose=False, plotting=False)
     df = readingDataFromSciKit()
@@ -62,17 +66,12 @@ def main():
     print(df.head())
     df_train, df_test = testTrainSplit(df, method="method3")
 
-    # do not touch test set
     visuals(df_train)
+    correlations(df_train)
+    df_train = cleanNans(df_train)
 
-    corr = correlationMatrix(df_train)
-    medHouseValCorr = corr["median_house_value"].sort_values(ascending=False)
-    print(medHouseValCorr)
+    pred, label = labelPredictorSplit(df=df_train, target="median_house_value")
 
-    scatterM = scatterMatrix(df=df_train, attr=["median_house_value", "median_income", "total_rooms",
-                "housing_median_age"])
-    
-    pred, label = splitLabelPredictor(df=df, target="median_house_value")    
 
 if __name__ == "__main__":
     main()
