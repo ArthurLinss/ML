@@ -2,19 +2,15 @@ from dataOrganizer import (
     fetchData,
     loadDataAsDF,
     inspectDFCol,
-    quickHistogram,
-    splitTrainTest,
-    splitTrainTestByID,
-    coloumnToCategory,
-    stratSplit,
     testTrainSplit,
     visuals,
+    correlationMatrix,
+    scatterMatrix,
+    addingFeatures,
+    splitLabelPredictor,
 )
 
-import pandas as pd
-
-
-def readingData(verbose=True, plotting=True):
+def readingDataFromWeb(verbose=True, plotting=True):
     # define path for download
     ROOT = "https://raw.githubusercontent.com/ageron/handson-ml/master/"
     PATH = "datasets/housing"
@@ -31,8 +27,6 @@ def readingData(verbose=True, plotting=True):
 
         print(df.describe())
 
-    if plotting:
-        quickHistogram(df)
 
     # add index
     df = df.reset_index()
@@ -41,6 +35,7 @@ def readingData(verbose=True, plotting=True):
 
 def readingDataFromSciKit():
     from sklearn.datasets import fetch_california_housing
+    # https://inria.github.io/scikit-learn-mooc/python_scripts/datasets_california_housing.html
 
     df = fetch_california_housing(as_frame=True)
     df = df.frame
@@ -60,8 +55,9 @@ def readingDataFromSciKit():
 
 
 def main():
-    # df = readingData(verbose=False, plotting=False)
+    # df = readingDataFromWeb(verbose=False, plotting=False)
     df = readingDataFromSciKit()
+    df = addingFeatures(df)
     print(df.columns)
     print(df.head())
     df_train, df_test = testTrainSplit(df, method="method3")
@@ -69,6 +65,14 @@ def main():
     # do not touch test set
     visuals(df_train)
 
+    corr = correlationMatrix(df_train)
+    medHouseValCorr = corr["median_house_value"].sort_values(ascending=False)
+    print(medHouseValCorr)
+
+    scatterM = scatterMatrix(df=df_train, attr=["median_house_value", "median_income", "total_rooms",
+                "housing_median_age"])
+    
+    pred, label = splitLabelPredictor(df=df, target="median_house_value")    
 
 if __name__ == "__main__":
     main()

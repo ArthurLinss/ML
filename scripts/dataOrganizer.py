@@ -51,15 +51,7 @@ def inspectDFCol(df: pd.DataFrame = None, coloumn: str = ""):
     print("\nvalue count: \n", val_count)
 
 
-import matplotlib.pyplot as plt
 
-
-def quickHistogram(df: pd.DataFrame = None):
-    """
-    create a quick and dirty histogram of all dataframe columns
-    """
-    df.hist(bins=50, figsize=(20, 15))
-    plt.show()
 
 
 import numpy as np
@@ -200,8 +192,13 @@ def testTrainSplit(df: pd.DataFrame = None, method: str = ""):
 
     return df_train, df_test
 
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def visuals(df):
+    """
+    scatter plot and other visuals
+    """
     df = df.copy()
     print(df.head())
     print(df.columns)
@@ -221,4 +218,108 @@ def visuals(df):
         plt.legend()
         plt.show()
 
+    def scatterSeaborn(df: pd.DataFrame=None, xcol: str="", ycol: str="", size_col: str="", title: str=""):
+        sns.scatterplot(
+            data=df,
+            x=xcol,
+            y=ycol,
+            size=size_col,
+            hue=size_col,
+            palette="viridis",
+            alpha=0.5,
+        )
+        plt.legend(title=size_col, bbox_to_anchor=(1.05, 0.95), loc="upper left")
+        plt.title(title)
+        plt.tight_layout()
+        plt.show()
+
+    def quickHistogram(df: pd.DataFrame = None):
+        """
+        create a quick and dirty histogram of all dataframe columns
+        """
+        #df.hist(bins=50, figsize=(20, 15))
+        df.hist(figsize=(12, 10), bins=30, edgecolor="black")
+        plt.subplots_adjust(hspace=0.7, wspace=0.4)
+        plt.show()
+    
+    quickHistogram(df)
     scatter(xcol="longitude", ycol="latitude")
+    scatterSeaborn(df=df, xcol="longitude", ycol="latitude",  size_col="median_house_value", title="Median house value depending of\n their spatial location")
+
+
+def correlationMatrix(df):
+    """
+    get correlation matrix of a dataframe
+    """
+    corr_matrix = df.corr()
+    return corr_matrix
+
+
+from pandas.plotting import scatter_matrix
+
+def scatterMatrix(df, attr):
+    """
+    shows scatter plot for various numerical values
+    """
+    scatter_matrix(df[attr], figsize=(12, 8))
+    plt.show()
+
+def addingFeatures(df):
+    """
+    adding some features to the dataframe based on column information, e.g. ratios of two columns
+    """
+    df["rooms_per_household"] = df["total_rooms"]/df["households"]
+    df["bedrooms_per_room"] = df["total_bedrooms"]/df["total_rooms"]
+    df["population_per_household"] = df["population"]/df["households"]
+    return df
+
+
+def splitLabelPredictor(df: pd.DataFrame=None, target: str=None):
+    """
+    separate predictors and label in dataframe
+    """
+    df_pred = df.drop(target, axis=1)
+    df_labels = df[target].copy()
+    return df_pred, df_labels
+
+
+def dataCleaning(df: pd.DataFrame=None, col_with_nan: str=None, method: str=None):
+    """
+    clean the data manually
+    method1: drop nans (rows)
+    method2: drop columns with nans 
+    method3: set missing values to some value (e.g. median)
+    """
+    if method=="method1":
+        df = df.dropna(subset=[col_with_nan]) 
+    elif method=="method2":
+        df = df.drop(col_with_nan, axis=1)
+    elif method="method3":
+        # replace nan with e.g. median
+        median =  df[col_with_nan].median()
+        df[col_with_nan].fillna(median)
+        # if this is training set, we would need the median later to replace missing values in test set as well
+    return df 
+
+from sklearn.preprocessing import Imputer 
+
+def dataCleaningImputer(df):
+    """
+    use scikit-learns imputer to replace missing values e.g. using the median
+    make sure the dataframe used here only contains numerical values, i.e. drop non-numericals first, see try-except-block
+    the imputer is kind of trained with the training and can be applied as an estimator/transformer also to the test set:
+    X = imputer.transform(df_test_num)
+    df_tr = pd.DataFrame(X, columns=df_num.columns)
+    """
+    imputer = Imputer(strategy="median")
+    # imputer can only handle numerical data!
+    try:
+        df_num = df.drop("ocean_proximity", axis=1)
+    except:
+        df_num = df
+    imputer.fit(df_num)
+    #imputer.statistics_
+    #print(df_num.median().values)
+    return imputer
+
+
