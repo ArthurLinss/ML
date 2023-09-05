@@ -67,9 +67,10 @@ import numpy as np
 
 def splitTrainTest(df: pd.DataFrame = None, ratio=0.2):
     """
-    manually split a dataframe into a train and test set
+    manually random split of a dataframe into a train and test set
     returns train and test df
     ratio is the relative of test to train set
+    problem: generates always a new test set, over time we will see all data when we re-run the script
     """
     np.random.seed(42)
     shuffled = np.random.permutation(len(df))
@@ -79,3 +80,70 @@ def splitTrainTest(df: pd.DataFrame = None, ratio=0.2):
     retValTrain = df.iloc[trainIndices]
     retValTest = df.iloc[testIndices]
     return retValTrain, retValTest
+
+
+import hashlib
+
+def splitTrainTestByID(df, ratio, id_col="index", hash=hashlib.md5):
+    """
+    advanced random splitting of training and test data set 
+    preserve same splitting of data even when re-running using some properties of the entries
+    """
+    def testSetCheck(identifier, ratio, hash):
+        """
+        get hash of each instance’s identifier, keep only last byte of hash, put instance in test set if this value is e.g. lower or equal to 51 (~20 percent of 256)”
+        """
+        i = np.int64(identifier)
+        h = hash(i).digest()[-1] < (256 * ratio)
+        return h
+
+    ids = df[id_col]
+    inTestSet = ids.apply(lambda id_: testSetCheck(id_, ratio, hash))
+    retValTest = df.loc[inTestSet]
+    retValTrain = df.loc[~inTestSet]
+    return retValTrain, retValTest
+
+
+from sklearn.model_selection import train_test_split
+
+def splitTrainTestSKLearn(df, ratio):
+    """
+    split data in training and test set randomly 
+    random valid if data set is large enough
+    ratio is relative test size
+    """
+    retValTrain, retValTest = train_test_split(df, test_size=ratio, random_state=42)
+    return retValTrain, retValTest
+
+# stratified sampling
+# divide opulation into homogeneous subgroups called strata 
+# ensure test and training sets are representatives of total population 
+# stratum could be bin of histogram and each bin should have entries in training and test set to be representative 
+
+
+def coloumnToCategory(df: pd.DataFrame=None, cat: str="", col: str="",  divider: float=0.0, merge_val: float=0.0, replace_val: float=0.0):
+    """
+    get new category attribute by dividing the median income by 1.5 (to limit the number of income categories), and rounding up using ceil (to have discrete categories), and then merging all the categories greater than 5 into category 5
+
+    df.where: entries where cond is False are replaced with corresponding value from other.
+
+    usage:
+    coloumnToCategory(
+        df, cat="income_cat", col="median_income", divider=1.5, merge_val=5.0, replace_val=5.0
+    )
+    """
+
+    df[cat] = np.ceil(df[col] / divider)
+    if (merge_val>0 and replace_val>0):
+        df[cat].where(cond=df[cat] < merge_val, other=merge_val, inplace=True)
+    return df
+
+
+from sklearn.model_selection import StratifiedShuffleSplit
+
+def stratSplit(df, ratio=0.2, cat: str=None):
+    split = StratifiedShuffleSplit(n_splits=1, test_size=ratio, random_state=42)
+    for train_index, test_index in split.split(df, df[cat]):
+        strat_train_set = df.loc[train_index]
+        strat_test_set = df.loc[test_index]
+    return strat_train_set, strat_test_set
