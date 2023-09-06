@@ -9,6 +9,7 @@ from dataOrganizer import (
     labelPredictorSplit,
     cleanNans,
     encoder,
+    scaling,
 )
 
 
@@ -54,14 +55,14 @@ def readingDataFromSciKit():
     }
     df.rename(columns=d, inplace=True)
 
-    # add pseudo categorical data 
+    # add pseudo categorical data
     df["ocean_proximity"] = "INLAND"
     for index, row in df.iterrows():
         if index % 5 == 0:
             df.at[index, "ocean_proximity"] = "ISLAND"
         if index % 6 == 0:
             df.at[index, "ocean_proximity"] = "NEAR BAY"
-        if index>500:
+        if index > 500:
             break
 
     return df
@@ -71,17 +72,21 @@ def main():
     # df = readingDataFromWeb(verbose=False, plotting=False)
     df = readingDataFromSciKit()
     df = addingFeatures(df)
-    df = encoder(df, cat_data="ocean_proximity", method="method3")
-    df = cleanNans(df)
+
     print(df.columns)
     print(df.head())
 
     df_train, df_test = testTrainSplit(df, method="method3")
 
-    #visuals(df_train)
-    #correlations(df_train)
+    # visuals(df_train)
+    # correlations(df_train)
 
-    
+    df_train, coder = encoder(df_train, cat_data="ocean_proximity", method="method3")
+    df_train, scaler = scaling(df=df_train, method="method2")
+    df_train = cleanNans(df_train, method="method2")
+
+    print(df_train.head())
+
     pred, label = labelPredictorSplit(df=df_train, target="median_house_value")
 
 
