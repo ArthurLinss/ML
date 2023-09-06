@@ -276,15 +276,26 @@ def scatterMatrix(df, attr):
     scatter_matrix(df[attr], figsize=(12, 8))
     plt.show()
 
+def removeNonNumericColumns(df):
+    """
+    some operations require numerical data to work and will fail with categorical data 
+    this function selects only numerical columns of dataframe and returns a copy 
+    """
+    df_copy = df.select_dtypes(['number'])
+    return df_copy
 
 def correlations(df):
+    """
+    get (linear) correlation matrix and scatter plot of correlations
+    """
+    df_num = removeNonNumericColumns(df)
 
-    corr = correlationMatrix(df)
+    corr = correlationMatrix(df_num)
     medHouseValCorr = corr["median_house_value"].sort_values(ascending=False)
     print(medHouseValCorr)
 
     scatterM = scatterMatrix(
-        df=df_dftrain,
+        df=df_num,
         attr=[
             "median_house_value",
             "median_income",
@@ -347,16 +358,16 @@ def dataCleaningNansImputer(df):
     df_tr = pd.DataFrame(X, columns=df_num.columns)
     """
     imputer = SimpleImputer(missing_values=np.nan, strategy="mean")
-    # imputer can only handle numerical data!
-    try:
-        df_num = df.drop("ocean_proximity", axis=1)
-    except:
-        df_num = df
-    imputer.fit(df_num)
+    # imputer can only handle numerical data! -> removing these should be done somewhere else in extra function
+    #try:
+    #    df_num = df.drop("ocean_proximity", axis=1)
+    #except:
+    #    df_num = df
+    imputer.fit(df)
     # imputer.statistics_
     # print(df_num.median().values)
 
-    df = pd.DataFrame(imputer.transform(df_num), columns=df_num.columns)
+    df = pd.DataFrame(imputer.transform(df), columns=df.columns)
     return df
 
 
@@ -368,4 +379,68 @@ def cleanNans(df: pd.DataFrame = None, method: str = None):
         df = dataCleaningNans(df, col_with_nan="total_bedrooms", method="method1")
     elif method == "method2":
         df = dataCleaningNansImputer(df)
+    return df
+
+from sklearn.preprocessing import LabelEncoder
+
+def runLabelEncoder(df: pd.DataFrame=None, cat_data: str=None):
+    """
+    encode categorical data (with column name cat_data) in dataframe df to numerical values
+    problem: ML algorithms think that interegers 1 and 2 are closer than 1 and 4 though these should be only categories 
+    """
+    if cat_data != None:
+        print("encoding")
+        encoder = LabelEncoder()
+        df[cat_data]  = encoder.fit_transform(df[cat_data])
+        print("encoder classes: ", encoder.classes_)
+        return df
+    else:
+        return df
+
+from sklearn.preprocessing import OneHotEncoder
+
+def runOneHotEncoder(df: pd.DataFrame=None, cat_data: str=None):
+    if cat_data != None:
+        encoder = LabelEncoder()
+        cat_encoded  = encoder.fit_transform(df[cat_data])
+        encoder1H = OneHotEncoder()
+        cat_encoded_1H = encoder1H.fit_transform(cat_encoded.reshape(-1,1))
+        #df[cat_data] = cat_encoded_1H.toarray()
+        # Convert the sparse matrix to a dense array
+        one_hot_encoded_array = cat_encoded_1H.toarray()
+        # Create a DataFrame from the one-hot encoded array
+        one_hot_encoded_df = pd.DataFrame(one_hot_encoded_array, columns=encoder1H.get_feature_names_out(input_features=[cat_data]))
+        df = pd.concat([df, one_hot_encoded_df], axis=1)
+        # also remove the original column
+        df = df.drop("ocean_proximity", axis=1)
+        print("encoder classes: ", encoder.classes_)
+        return df
+    else:
+        return df
+    
+from sklearn.preprocessing import LabelBinarizer 
+
+def runLabelBinarizer(df: pd.DataFrame=None, cat_data: str=None):
+    if cat_data != None:
+        encoder = LabelBinarizer()
+        cat_encoded_LB = encoder.fit_transform(df[cat_data])
+        one_hot_encoded_df = pd.DataFrame(cat_encoded_LB, columns=encoder.classes_)
+        df = pd.concat([df, one_hot_encoded_df], axis=1)
+        # also remove the original column
+        df = df.drop("ocean_proximity", axis=1)
+        print("encoder classes: ", encoder.classes_)
+        return df  
+    else:
+        return df 
+
+def encoder(df, cat_data=None, method: str=None):
+    """
+    wrapper fpr hot encoding
+    """
+    if method == "method1":
+        df = runLabelEncoder(df, cat_data=cat_data)
+    elif method == "method2":
+        df = runOneHotEncoder(df, cat_data=cat_data)
+    elif method == "method3":
+        df = runLabelBinarizer(df, cat_data=cat_data)
     return df
