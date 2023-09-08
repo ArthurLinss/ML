@@ -110,7 +110,7 @@ def gridSearch(
     model,
     data,
     label,
-    param_grid=param_grid,
+    param_grid,
 ):
     """
    optimize model's hyperparameters via grid search by testing different combinations of hyperparemeters
