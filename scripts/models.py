@@ -115,10 +115,12 @@ def gridSearch(
     """
    optimize model's hyperparameters via grid search by testing different combinations of hyperparemeters
    hyperparameters: if no knowledge, try powers of 10
+   alternative for very many hyperparameters: RandomizedSearchCV or ensemble methods
    """
     grid_search = GridSearchCV(
         model, param_grid, cv=5, scoring="neg_mean_squared_error"
     )
     grid_search.fit(data, label)
     print("Grid search best param: ", grid_search.best_params_)
+    print("Grid search best esimator: ", gird_search.best_estimator_)
     return grid_search
