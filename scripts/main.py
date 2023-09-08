@@ -1,3 +1,18 @@
+"""
+some basic machine learning workflow including
+- loading data from web or scikit learn
+- prepare data
+    - clean nans (different methods)
+    - scale training data
+    - encode categorical data (one-hot-encoding)
+    - split train and test data
+    - split label (target) and data
+- machine learning models
+    - linear regression
+    - decision tree
+    - random forest
+"""
+
 from dataOrganizer import (
     fetchData,
     loadDataAsDF,
@@ -10,6 +25,15 @@ from dataOrganizer import (
     cleanNans,
     encoder,
     scaling,
+)
+
+from models import (
+    linearRegression,
+    getRMSE,
+    decTree,
+    crossVal,
+    forestReg,
+    gridSearch,
 )
 
 
@@ -88,6 +112,34 @@ def main():
     print(df_train.head())
 
     pred, label = labelPredictorSplit(df=df_train, target="median_house_value")
+
+    # linear regression model
+    lin_reg = linearRegression(pred, label)
+    # test
+    rmse = getRMSE(lin_reg, pred.iloc[:5], label.iloc[:5])
+
+    # decision tree model
+    tree = decTree(pred, label)
+    # test
+    rmse = getRMSE(tree, pred.iloc[:5], label.iloc[:5])
+    # cross validation of decision tree
+    cv = crossVal(tree, pred, label, cv=10, verbose=True)
+
+    # random forest model
+    forest = forestReg(pred, label)
+    rmse = getRMSE(forest, pred.iloc[:5], label.iloc[:5])
+    cv = crossVal(forest, pred, label, cv=10, verbose=True)
+
+    param_grid = [
+        {"n_estimators": [3, 10, 30], "max_features": [2, 4, 6, 8]},
+        {"bootstrap": [False], "n_estimators": [3, 10], "max_features": [2, 3, 4]},
+    ]
+    gridSearch = gridSearch(
+        model=forest,
+        data=pred,
+        label=label,
+        param_grid=param_grid,
+    )
 
 
 if __name__ == "__main__":
