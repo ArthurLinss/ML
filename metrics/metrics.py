@@ -50,6 +50,7 @@ class myMetric():
         return f
 
 
+    @property
     def tpr(self)
         """
         true positive rate
@@ -58,6 +59,7 @@ class myMetric():
         """
         return self.recall
 
+    @property
     def fpr(self):
         """
         false positive rate
