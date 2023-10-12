@@ -11,19 +11,13 @@ class Tokenize():
         return tokens
 
     def bySentence(self):
-        """
-        doesnt work by now
-        """
-        tokens = re.findall('[.!?] ', self.text)
+        tokens = re.compile("(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s").split( self.text)
         return tokens
-
-
-
 
 
 def test():
 
-    text = """this is a sentence with many wo-rds. so lets try. this. yo."""
+    text = """this is a sentence with many wo-rds. so lets try. this. yo"""
     t = Tokenize(text)
     tokens = t.byWords()
     print(tokens)
