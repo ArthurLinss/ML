@@ -1,12 +1,13 @@
 from sklearn.datasets import fetch_openml
 import sklearn
 import time
-
+from sklearn.linear_model import SGDClassifier
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
 print("sklearn version: ", sklearn.__version__)
+
 
 
 class prepareData():
@@ -62,6 +63,54 @@ class prepareData():
             plt.show()
         return 0
 
+
+from sklearn.model_selection import StratifiedKFold
+from sklearn.base import clone
+
+def xVal(X_train, y_train, clf):
+    """
+    own cross validation
+    stratifiedKFold - ensure that each fold of dataset has the same proportion of observations with a given label
+
+    """
+    print("XVal")
+    skfolds = StratifiedKFold(n_splits=3, random_state=42, shuffle=True)
+
+    for i_train, i_test in skfolds.split(X_train, y_train):
+        clone_clf = clone(clf)
+        X_train_folds = X_train(i_train)
+        y_train_folds = (y_train(i_train))
+        X_test_fold = X_train(i_test)
+        y_test_fold = (y_train(i_test))
+
+        clone_clf.fit(X_train_folds, y_train_folds)
+        y_pred = clone_clf.predict(X_test_fold)
+        n_correct = sum(y_pred == y_test_fold)
+        print(n_correct / len(y_pred))
+
+
+def binaryClass(X_train, y_train, targetNumber: str="5") -> None:
+    """
+    identify number vs. not-number
+    sgd = stochastic gradient classifier
+    targetNumber is a string here since we use fetch_openml() to download MNIST, and it returns labels as strings
+    see: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html
+    """
+
+    # chose the value you want to classify, e.g. 5 to look for 5 vs. not 5
+    y_train_label = (y_train == targetNumber)
+
+    clf = SGDClassifier(random_state=42)
+    clf.fit(X_train, y_train_label)
+
+    #test
+    print(X_train[5000].reshape(1, -1))
+    print(y_train[5000])
+    print(clf.predict(X_train[5000].reshape(1, -1)))
+
+    xVal(X_train, y_train_label, clf)
+
+
 def main():
     dataClass = prepareData()
     X_train = dataClass.X_train
@@ -72,7 +121,7 @@ def main():
     #print(X_train, y_train)
     #dataClass.plotDigit(data=X_train, label=y_train, number=36000, show=True)
 
-
+    binaryClass(X_train, y_train)
 
 if __name__ == "__main__":
     t0 = time.time()
