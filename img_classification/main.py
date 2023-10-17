@@ -1,3 +1,13 @@
+"""
+MNIST data set for classifying picutres of hand-written digits
+
+
+accuracy in general not a good metric to measure performance in classifications (high accuaracy might be related to imbalanced data set)
+precision = TP/(TP+FP)  (accuracy of positive predictions)
+recall = Tp/(TP+FN)  (sensitivie, true positive rate)
+"""
+
+
 from sklearn.datasets import fetch_openml
 import sklearn
 import time
@@ -5,6 +15,13 @@ from sklearn.linear_model import SGDClassifier
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.model_selection import StratifiedKFold
+from sklearn.base import clone
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_predict
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import precision_score, recall_score
+from sklearn.metrics import f1_score
 
 print("sklearn version: ", sklearn.__version__)
 
@@ -64,38 +81,38 @@ class prepareData():
         return 0
 
 
-from sklearn.model_selection import StratifiedKFold
-from sklearn.base import clone
-
-def xVal(X_train, y_train, clf):
+def xValOwnImpl(X_train, y_train, clf):
     """
-    own cross validation
-    stratifiedKFold - ensure that each fold of dataset has the same proportion of observations with a given label
-
+    own implementation of cross valiation using strafified kfold
     """
-    print("XVal")
-    skfolds = StratifiedKFold(n_splits=3, random_state=42, shuffle=True)
-
-    for i_train, i_test in skfolds.split(X_train, y_train):
+    skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+    skf.get_n_splits(X_train, y_train)
+    for i, (train_index, test_index) in enumerate(skf.split(X_train, y_train)):
+        print(f"Fold {i}:")
+        print(f"  Train: index={train_index}")
+        print(f"  Test:  index={test_index}")
         clone_clf = clone(clf)
-        X_train_folds = X_train(i_train)
-        y_train_folds = (y_train(i_train))
-        X_test_fold = X_train(i_test)
-        y_test_fold = (y_train(i_test))
+        X_train_folds = X_train[train_index]
+        y_train_folds = (y_train[train_index])
+        X_test_fold = X_train[test_index]
+        y_test_fold = (y_train[test_index])
 
         clone_clf.fit(X_train_folds, y_train_folds)
         y_pred = clone_clf.predict(X_test_fold)
         n_correct = sum(y_pred == y_test_fold)
         print(n_correct / len(y_pred))
 
-
 def binaryClass(X_train, y_train, targetNumber: str="5") -> None:
     """
+    classification and corss-valdidation
+
     identify number vs. not-number
     sgd = stochastic gradient classifier
     targetNumber is a string here since we use fetch_openml() to download MNIST, and it returns labels as strings
     see: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html
     """
+    runXVal = False
+    runConfusionMatrix = True
 
     # chose the value you want to classify, e.g. 5 to look for 5 vs. not 5
     y_train_label = (y_train == targetNumber)
@@ -104,11 +121,24 @@ def binaryClass(X_train, y_train, targetNumber: str="5") -> None:
     clf.fit(X_train, y_train_label)
 
     #test
-    print(X_train[5000].reshape(1, -1))
-    print(y_train[5000])
-    print(clf.predict(X_train[5000].reshape(1, -1)))
+    #print(X_train[5000].reshape(1, -1))
+    #print(y_train[5000])
+    #print(clf.predict(X_train[5000].reshape(1, -1)))
 
-    xVal(X_train, y_train_label, clf)
+    if runXVal:
+        #xValOwnImpl(X_train, y_train_label, clf)
+        xValAcc = cross_val_score(clf, X_train, y_train_label, cv=3, scoring="accuracy")
+        print("X-validation accuracy score: ", xValAcc)
+    if runConfusionMatrix:
+        y_train_pred = cross_val_predict(clf, X_train, y_train_label, cv=3)
+        cm = confusion_matrix(y_train_label, y_train_pred)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm,display_labels=clf.classes_)
+        disp.plot()
+        prec = precision_score(y_train_label, y_train_pred)
+        recall = recall_score(y_train_label, y_train_pred)
+        f1 = f1_score(y_train_label, y_train_pred)
+        plt.title("Precision: %.2f, Recall: %.2f, f1: %.2f" % (prec, recall, f1))
+        plt.show()
 
 
 def main():
