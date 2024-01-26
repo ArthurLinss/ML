@@ -21,12 +21,8 @@ def process_text():
     if request.method == 'POST':
         input_text = request.form['input_text']
         style = request.form['style']  # "dep", "ent"
-
         doc = nlp(input_text)
-
-
         html = render_displacy(doc, style)
-
         return html
 
 @app.route('/get_ner_labels', methods=['POST'])
