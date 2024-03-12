@@ -1,5 +1,6 @@
 # HYDRA
 
+- https://hydra.cc/
 - configuration settings/configuration management
 - installation: `pip install hydra-core --upgrade`
 - the config if loaded automatically when running script
