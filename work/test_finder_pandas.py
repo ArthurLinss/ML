@@ -5,85 +5,95 @@ class AutoFind:
     def __init__(self, dataframe):
         self.dataframe = dataframe
 
-    def find_something(self, target_string, something, distance=3):
+    def find_something(self, target_strings: list, something, distance=3) -> pd.DataFrame:
         results = []
         info = ""
+        target_strings = list(set(target_strings))
 
         for index, row in self.dataframe.iterrows():
             for col_index, cell in enumerate(row):
-                if cell == target_string:
-                    row_index = index
-                    for i in range(max(0, row_index - distance), min(len(self.dataframe), row_index + distance + 1)):
-                        for j in range(max(0, col_index - distance), min(len(row), col_index + distance + 1)):
-                            if isinstance(something, str):
-                                if self.dataframe.iloc[i, j] == something:
-                                    dist = abs(i - row_index) + abs(j - col_index)
-                                    col_dist = abs(j - col_index)
-                                    # Adjusting probability based on distance and position relative to target_string
-                                    if i == row_index and j >= col_index:  # Lower probability for cells below target_string
-                                        probability = 1
-                                        info = "right same row"
-                                    elif i == row_index and j < col_index:  # Lower probability for cells below target_string
-                                        probability = 0.1
-                                        info = "left same row"
-                                    elif i >= row_index and j == col_index:  # Lower probability for cells below target_string
-                                        probability = 0.95
-                                        info = "below same col"
-                                    elif i < row_index and j == col_index:  # Lower probability for cells below target_string
-                                        probability = 0.11
-                                        info = "above same col"
-                                    else:
-                                        probability = 0.1
-                                        info = "other"
+                for target_string in target_strings:
+                    if cell == target_string:
+                        row_index = index
+                        for i in range(max(0, row_index - distance), min(len(self.dataframe), row_index + distance + 1)):
+                            for j in range(max(0, col_index - distance), min(len(row), col_index + distance + 1)):
+                                if isinstance(something, str):
+                                    if self.dataframe.iloc[i, j] == something:
+                                        dist_y = (i - row_index)
+                                        dist_x = (j - col_index)
+                                        dist = abs(dist_x) + abs(dist_y)
+                                        col_dist = abs(j - col_index)
+                                        # Adjusting probability based on distance and position relative to target_string
+                                        if i == row_index and j >= col_index:  # Lower probability for cells below target_string
+                                            probability = 1
+                                            info = "right same row"
+                                        elif i == row_index and j < col_index:  # Lower probability for cells below target_string
+                                            probability = 0.1
+                                            info = "left same row"
+                                        elif i >= row_index and j == col_index:  # Lower probability for cells below target_string
+                                            probability = 0.95
+                                            info = "below same col"
+                                        elif i < row_index and j == col_index:  # Lower probability for cells below target_string
+                                            probability = 0.11
+                                            info = "above same col"
+                                        else:
+                                            probability = 0.1
+                                            info = "other"
 
-                                    probability = probability / (dist)
-
-                                    results.append({
-                                        'row_index %s' % target_string: row_index,
-                                        'col_index %s' % target_string: col_index,
-                                        'row %s' % something:i,
-                                        "col %s" % something:j,
-                                        "dist" : dist,
-                                        'probability': probability,
-                                        "info":info
-                                    })
-                            elif isinstance(something, re.Pattern):
-                                if something.match(str(self.dataframe.iloc[i, j])):
-                                    dist = abs(i - row_index) + abs(j - col_index)
-                                    col_dist = abs(j - col_index)
-                                    # Adjusting probability based on distance and position relative to target_string
-                                    if i == row_index and j >= col_index:  # Lower probability for cells below target_string
-                                        probability = 1
-                                        info = "right same row"
-                                    elif i == row_index and j < col_index:  # Lower probability for cells below target_string
-                                        probability = 0.1
-                                        info = "left same row"
-                                    elif i >= row_index and j == col_index:  # Lower probability for cells below target_string
-                                        probability = 0.95
-                                        info = "below same col"
-                                    elif i < row_index and j == col_index:  # Lower probability for cells below target_string
-                                        probability = 0.11
-                                        info = "above same col"
-                                    else:
-                                        probability = 0.1
-                                        info = "other"
-
-                                    if dist>0:
                                         probability = probability / (dist)
-                                    else:
-                                        probability = 0
 
-                                    results.append({
-                                        'row_index %s' % target_string: row_index,
-                                        'col_index %s' % target_string: col_index,
-                                        'row %s' % something:i,
-                                        "col %s" % something:j,
-                                        "dist" : dist,
-                                        'probability': probability,
-                                        "info":info
-                                    })
+                                        results.append({
+                                            'row_index %s' % target_string: row_index,
+                                            'col_index %s' % target_string: col_index,
+                                            'row %s' % something:i,
+                                            "col %s" % something:j,
+                                            "dist" : dist,
+                                            "distx" : dist_x,
+                                            "disty" : dist_y,
+                                            'probability': probability,
+                                            "info":info
+                                        })
+                                elif isinstance(something, re.Pattern):
+                                    if something.match(str(self.dataframe.iloc[i, j])):
+                                        dist_y = (i - row_index)
+                                        dist_x = (j - col_index)
+                                        dist = abs(dist_x) + abs(dist_y)
+                                        col_dist = abs(j - col_index)
+                                        # Adjusting probability based on distance and position relative to target_string
+                                        if i == row_index and j >= col_index:  # Lower probability for cells below target_string
+                                            probability = 1
+                                            info = "right same row"
+                                        elif i == row_index and j < col_index:  # Lower probability for cells below target_string
+                                            probability = 0.1
+                                            info = "left same row"
+                                        elif i >= row_index and j == col_index:  # Lower probability for cells below target_string
+                                            probability = 0.95
+                                            info = "below same col"
+                                        elif i < row_index and j == col_index:  # Lower probability for cells below target_string
+                                            probability = 0.11
+                                            info = "above same col"
+                                        else:
+                                            probability = 0.1
+                                            info = "other"
 
-        return results
+                                        if dist>0:
+                                            probability = probability / (dist)
+                                        else:
+                                            probability = 0
+
+                                        results.append({
+                                            'row_index %s' % target_string: row_index,
+                                            'col_index %s' % target_string: col_index,
+                                            'row %s' % something:i,
+                                            "col %s" % something:j,
+                                            "dist" : dist,
+                                            "distx" : dist_x,
+                                            "disty" : dist_y,
+                                            'probability': probability,
+                                            "info":info
+                                        })
+
+        return pd.DataFrame(results)
 
 # Example usage:
 # Assuming df is your DataFrame
@@ -101,18 +111,17 @@ df = pd.DataFrame(data)
 finder = AutoFind(df)
 
 # Finding something with string input
-results_str = finder.find_something('apple', 'dog', distance=2)
+dfres_str = finder.find_something(['apple'], 'dog', distance=2)
 
 # Finding something with regex input
 pattern = re.compile(r'\d{6}')  # Regex pattern for a 6-digit number
 pattern = re.compile(r'^.{3}$') # string lentght 3
 
-results_regex = finder.find_something('apple', pattern, distance=2)
+dfres_regex = finder.find_something(['apple'], pattern, distance=2)
 
-dfres_str = pd.DataFrame(results_str)
-dfres_str = dfres_str[dfres_str["probability"] > 0.8]
+if "probability" in dfres_str:
+    dfres_str = dfres_str[dfres_str["probability"] > 0.8]
 
-dfres_regex = pd.DataFrame(results_regex)
 if "probability" in dfres_regex:
     dfres_regex = dfres_regex[dfres_regex["probability"] > 0.8]
 
